@@ -6,7 +6,7 @@ Created on Mon Dec  2 12:49:57 2019
 @author: tommy
 """
 
-from WDM_codes.DielectricFunc.Mermin import MerminDielectric as MD
+from dielectric-function import MerminDielectric as MD
 import numpy as np
 import matplotlib.pyplot as plt
 
