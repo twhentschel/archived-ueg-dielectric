@@ -5,8 +5,10 @@ Created on Mon Dec  2 12:49:57 2019
 
 @author: tommy
 """
+import os
+os.chdir("/home/th584/Documents/projects/dielectric-function")
 
-from dielectric-function import MerminDielectric as MD
+from Mermin import MerminDielectric as MD
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -31,7 +33,7 @@ muau = 0.305 # mu for aluminum, with ne_cgs=1.8*10**23, T=1ev, Z*=3; au
 
 k = kFau
 
-filename = "WDM_codes/DielectricFunc/Mermin/data_files/Al_6_eV_vw.txt"
+filename = "tests/Al_6_eV_vw.txt"
 w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
 nu = 1j*ImnuB; nu += RenuB
 ELF = np.asarray([MD.MerminELF(k, x, T_au, muau, y) for x,y in zip(w,nu)])
