@@ -136,38 +136,48 @@ def MerminDielectric(k, omega, kBT, mu, nu):
     denominator = omega + 1j*nu * (RPAcomplexfreq - 1)/(RPArealfreq - 1)
     
     return 1 + numerator/denominator
+
+def ELF(k, omega, kBT, mu, nu):
+    """
+    Electron Loss Function, related to the amount of energy dissapated in the 
+    system.
+    """
+    
+    eps = MerminDielectric(k, omega, kBT, mu, nu)
+    return eps.imag/(eps.real**2 + eps.imag**2)
+
 # Tests
+if __name__=='__main__':
+    import matplotlib.pyplot as plt    
 
-import matplotlib.pyplot as plt    
-
-k = 1
-mu = 0.279
-kbT = 1/27.2114
-# Using nu = 0 does not work so well!
-nu = 0
-
-
-# Initial tests for imaginary part
-'''
-w = 1.5
-p = np.linspace(0, 5, 200)
-y0 = 0
-intp = odeint(imagintegrand, y0, p, args=(k, w, kbT, mu, nu))
-intp = imagintegrand(0, p, k, w, kbT, mu, nu)
-#integrandargs = lambda p, y : imagintegrand(p, y, k, w, kbT, mu, nu)
-#intp = solve_ivp(integrandargs, [0., 10.], [y0], max_step=0.1)
-
-plt.plot(p, 2/np.pi/k**3 * intp, label="w = {}".format(w))
-plt.legend()
-plt.show
-'''
-w = np.linspace(0, 4, 200)
-import time
-start = time.time()
-eps = np.asarray([generalRPAdielectric(k, x, kbT, mu, nu) for x in w])
-print("time = {}".format(time.time()-start))
-plt.plot(w, eps.real, label='real')
-plt.plot(w, eps.imag, label='imaginary')
-plt.legend()
-plt.show()
+    k = 1
+    mu = 0.279
+    kbT = 1/27.2114
+    # Using nu = 0 does not work so well!
+    nu = 0
+    
+    
+    # Initial tests for imaginary part
+    '''
+    w = 1.5
+    p = np.linspace(0, 5, 200)
+    y0 = 0
+    intp = odeint(imagintegrand, y0, p, args=(k, w, kbT, mu, nu))
+    intp = imagintegrand(0, p, k, w, kbT, mu, nu)
+    #integrandargs = lambda p, y : imagintegrand(p, y, k, w, kbT, mu, nu)
+    #intp = solve_ivp(integrandargs, [0., 10.], [y0], max_step=0.1)
+    
+    plt.plot(p, 2/np.pi/k**3 * intp, label="w = {}".format(w))
+    plt.legend()
+    plt.show
+    '''
+    w = np.linspace(0, 4, 200)
+    import time
+    start = time.time()
+    eps = np.asarray([generalRPAdielectric(k, x, kbT, mu, nu) for x in w])
+    print("time = {}".format(time.time()-start))
+    plt.plot(w, eps.real, label='real')
+    plt.plot(w, eps.imag, label='imaginary')
+    plt.legend()
+    plt.show()
 

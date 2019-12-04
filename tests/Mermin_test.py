@@ -5,8 +5,6 @@ Created on Mon Dec  2 12:49:57 2019
 
 @author: tommy
 """
-import os
-os.chdir("/home/th584/Documents/projects/dielectric-function")
 
 from Mermin import MerminDielectric as MD
 import numpy as np
@@ -36,6 +34,7 @@ k = kFau
 filename = "tests/Al_6_eV_vw.txt"
 w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
 nu = 1j*ImnuB; nu += RenuB
-ELF = np.asarray([MD.MerminELF(k, x, T_au, muau, y) for x,y in zip(w,nu)])
+ELF = np.asarray([MD.ELF(k, x, T_au, muau, y) for x,y in zip(w,nu)])
 
 plt.plot(w, ELF)
+plt.show()
