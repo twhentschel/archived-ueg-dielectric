@@ -1,7 +1,7 @@
 # dielectric-function
 Methods to calculate a dielectric function for many-body systems, using different approximations and what not.
 
-The initial work for this project relied on something called the Random Phase Approximation (RPA) to calculate the dielectric function. This is essentially a mean field approximation that turns a many-body problem into a solvable one-body problem. In this instance, the dielectric function becomes a complex quantity, where the real part is an integral that must be calculated numerically while the imaginary part has a analytic form [W. R. Johnson et al., PRE, 2012]. 
+The initial work for this project relied on something called the Random Phase Approximation (RPA) to calculate the dielectric function. This is essentially a mean field approximation that turns a many-body problem into a solvable one-body problem. In this instance, the dielectric function becomes a complex quantity, where the real part is an integral that must be calculated numerically while the imaginary part has an analytic form [W. R. Johnson et al., PRE, 2012]. 
 
 This is fine for the most part, but it removes any information of electron-electron correlations and electron-ion interactions. 
 
