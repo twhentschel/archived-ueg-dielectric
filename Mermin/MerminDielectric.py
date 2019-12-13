@@ -130,10 +130,10 @@ def MerminDielectric(k, omega, kBT, mu, nu):
     """
     
     RPAcomplexfreq = generalRPAdielectric(k, omega, kBT, mu, nu)
-    RPArealfreq    = generalRPAdielectric(k, omega, kBT, mu, 0.)
+    RPAzerofreq    = generalRPAdielectric(k, 0., kBT, mu, 0.)
     
     numerator   = (omega + 1j*nu)*(RPAcomplexfreq - 1)
-    denominator = omega + 1j*nu * (RPAcomplexfreq - 1)/(RPArealfreq - 1)
+    denominator = omega + 1j*nu * (RPAcomplexfreq - 1)/(RPAzerofreq - 1)
     
     return 1 + numerator/denominator
 
@@ -174,7 +174,7 @@ if __name__=='__main__':
     w = np.linspace(0, 4, 200)
     import time
     start = time.time()
-    eps = np.asarray([generalRPAdielectric(k, x, kbT, mu, nu) for x in w])
+    eps = np.asarray([MerminDielectric(k, x, kbT, mu, nu) for x in w])
     print("time = {}".format(time.time()-start))
     plt.plot(w, eps.real, label='real')
     plt.plot(w, eps.imag, label='imaginary')
