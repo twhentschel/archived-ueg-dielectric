@@ -150,7 +150,7 @@ def ELF(k, omega, kBT, mu, nu):
 if __name__=='__main__':
     import matplotlib.pyplot as plt    
 
-    k = 1
+    k = 0.5
     mu = 0.279
     kbT = 1/27.2114
     # Using nu = 0 does not work so well!
@@ -174,10 +174,9 @@ if __name__=='__main__':
     w = np.linspace(0, 4, 200)
     import time
     start = time.time()
-    eps = np.asarray([MerminDielectric(k, x, kbT, mu, nu) for x in w])
+    elf = np.asarray([ELF(k, x, kbT, mu, nu) for x in w])
     print("time = {}".format(time.time()-start))
-    plt.plot(w, eps.real, label='real')
-    plt.plot(w, eps.imag, label='imaginary')
+    plt.plot(w, elf, label='RPA')
     plt.legend()
     plt.show()
 
