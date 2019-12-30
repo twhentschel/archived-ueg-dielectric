@@ -18,8 +18,8 @@ of Warm Dense Matter".
 
 import numpy as np
 from scipy.integrate import odeint
-
-def realintegrand(y, p, k, omega, kBT, mu, nu, delta):
+from scipy.integrate import solve_ivp
+def realintegrand(p, y, k, omega, kBT, mu, nu, delta):
     """
     The integrand present in the formula for the real part of the general
     RPA dielectric function.
@@ -49,7 +49,7 @@ def realintegrand(y, p, k, omega, kBT, mu, nu, delta):
     
     return logpart * FD * p
 
-def imagintegrand(y, p, k, omega, kBT, mu, nu):
+def imagintegrand(p, y, k, omega, kBT, mu, nu):
     """
     The integrand present in the formula for the imaginary part of the general
     RPA dielectric function.
@@ -92,13 +92,13 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     ________
     """
     
-    y0 = 0
-    p = np.linspace(0, 10, 50)
+    y0 = [0]
+    p = (0, 10) #np.linspace(0, 10, 50)
     
     delta = 10**-7
     
-    realODEsolve = odeint(realintegrand, y0, p, args = (k, omega, kBT, mu, nu,
-                                                        delta))
+    realODEsolve = solve_ivp(realintegrand, p, y0, method='LSODA',
+                             args = (k, omega, kBT, mu, nu, delta))
     
     # a small nu causes some problems when integrating the imaginary part of
     # the dielectric. When nu is small, the integrand is like a modulated 
@@ -110,9 +110,10 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
             tmp = p1
             p1 = p2
             p2 = tmp
-        p = np.linspace(p1, p2, 50)
+        p = np.linspace(p1, p2)#, 50)
         
-    imagODEsolve = odeint(imagintegrand, y0, p, args = (k, omega, kBT, mu, nu))
+    imagODEsolve = solve_ivp(imagintegrand, p, y0, method='LSODA',
+                             args = (k, omega, kBT, mu, nu))
 
     return complex(1 + 2 / np.pi / k**3 * realODEsolve[-1],
                    2 / np.pi / k**3 * imagODEsolve[-1])
