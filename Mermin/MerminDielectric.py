@@ -93,13 +93,17 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     """
     
     y0 = [0]
-    p = (0, 10) #np.linspace(0, 10, 50)
+    # Limits of integration - 10 sufficiently acts like infinity in this 
+    # problem.
+    plim = (0, 10)
+    # Change the tolerance - matches scipy.integrate.odeint
+    tol = 1.49012e-8
     
     delta = 10**-7
-    
     realintargs = lambda p, y: realintegrand(p, y, k, omega, kBT, mu, nu, 
                                              delta)
-    realODEsolve = solve_ivp(realintargs, p, y0, method='LSODA')
+    realODEsolve = solve_ivp(realintargs, plim, y0, method='LSODA',
+                             rtol=tol, atol=tol)
     
     # a small nu causes some problems when integrating the imaginary part of
     # the dielectric. When nu is small, the integrand is like a modulated 
@@ -111,11 +115,15 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
             tmp = p1
             p1 = p2
             p2 = tmp
-        p = np.linspace(p1, p2)#, 50)
-    
-    imagintargs = lambda p, y: imagintegrand(p, y, k, omega, kBT, mu, nu)
-    imagODEsolve = solve_ivp(imagintargs, p, y0, method='LSODA')
+        plim = (p1, p2)
 
+    imagintargs = lambda p, y: imagintegrand(p, y, k, omega, kBT, mu, nu)
+    
+    # Restricting max_step is important when nu becomes small (i.e. ~< 1e-5)
+    imagODEsolve = solve_ivp(imagintargs, plim, y0, method='LSODA',
+                             rtol=tol, atol=tol,
+                             max_step=0.1)
+    
     return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
                    2 / np.pi / k**3 * imagODEsolve.y[0][-1])
 
@@ -136,7 +144,11 @@ def MerminDielectric(k, omega, kBT, mu, nu):
     
     numerator   = (omega + 1j*nu)*(RPAcomplexfreq - 1)
     denominator = omega + 1j*nu * (RPAcomplexfreq - 1)/(RPAzerofreq - 1)
-    
+
+    # if this case is not handled seperately, it can return a bad answer when
+    # omega == 0.
+    if abs(nu) == 0:
+        return RPAcomplexfreq
     return 1 + numerator/denominator
 
 def ELF(k, omega, kBT, mu, nu):
@@ -160,8 +172,8 @@ if __name__=='__main__':
     
     
     # Initial tests for imaginary part
-    
-    w = 1
+    '''
+    w = 0
     p = (0, 10)
     y0 = [0]
     delta = 10**-10
@@ -184,6 +196,7 @@ if __name__=='__main__':
     plt.show
     '''
     w = np.linspace(0, 4, 200)
+
     import time
     start = time.time()
     elf = np.asarray([ELF(k, x, kbT, mu, nu) for x in w])
@@ -191,4 +204,4 @@ if __name__=='__main__':
     plt.plot(w, elf, label='RPA')
     plt.legend()
     plt.show()
-    '''
+
