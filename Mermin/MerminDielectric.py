@@ -97,8 +97,9 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     
     delta = 10**-7
     
-    realODEsolve = solve_ivp(realintegrand, p, y0, method='LSODA',
-                             args = (k, omega, kBT, mu, nu, delta))
+    realintargs = lambda p, y: realintegrand(p, y, k, omega, kBT, mu, nu, 
+                                             delta)
+    realODEsolve = solve_ivp(realintargs, p, y0, method='LSODA')
     
     # a small nu causes some problems when integrating the imaginary part of
     # the dielectric. When nu is small, the integrand is like a modulated 
@@ -111,12 +112,12 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
             p1 = p2
             p2 = tmp
         p = np.linspace(p1, p2)#, 50)
-        
-    imagODEsolve = solve_ivp(imagintegrand, p, y0, method='LSODA',
-                             args = (k, omega, kBT, mu, nu))
+    
+    imagintargs = lambda p, y: imagintegrand(p, y, k, omega, kBT, mu, nu)
+    imagODEsolve = solve_ivp(imagintargs, p, y0, method='LSODA')
 
-    return complex(1 + 2 / np.pi / k**3 * realODEsolve[-1],
-                   2 / np.pi / k**3 * imagODEsolve[-1])
+    return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
+                   2 / np.pi / k**3 * imagODEsolve.y[0][-1])
 
 def MerminDielectric(k, omega, kBT, mu, nu):
     """
@@ -151,7 +152,7 @@ def ELF(k, omega, kBT, mu, nu):
 if __name__=='__main__':
     import matplotlib.pyplot as plt    
 
-    k = 0.5
+    k = 1
     mu = 0.279
     kbT = 1/27.2114
     # Using nu = 0 does not work so well!
@@ -159,16 +160,26 @@ if __name__=='__main__':
     
     
     # Initial tests for imaginary part
-    '''
-    w = 1.5
-    p = np.linspace(0, 5, 200)
-    y0 = 0
-    intp = odeint(imagintegrand, y0, p, args=(k, w, kbT, mu, nu))
-    intp = imagintegrand(0, p, k, w, kbT, mu, nu)
+    
+    w = 1
+    p = (0, 10)
+    y0 = [0]
+    delta = 10**-10
+    
+    imagintargs = lambda p, y: imagintegrand(p, y, k, w, kbT, mu, nu)
+    intpivp = solve_ivp(imagintargs, p, y0, method='LSODA',
+                        rtol=1.49012e-8, atol=1.49012e-8,
+                        max_step=1)
+    p = np.linspace(0, 10, 100)
+    intpode = odeint(imagintegrand, y0[0], p, tfirst=True,
+                     args=(k, w, kbT, mu, nu))
+    #intp = imagintegrand(0, p, k, w, kbT, mu, nu)
     #integrandargs = lambda p, y : imagintegrand(p, y, k, w, kbT, mu, nu)
     #intp = solve_ivp(integrandargs, [0., 10.], [y0], max_step=0.1)
     
-    plt.plot(p, 2/np.pi/k**3 * intp, label="w = {}".format(w))
+    plt.plot(intpivp.t, intpivp.y[0], label="ivp")
+    plt.plot(p, intpode, label="ode")
+    
     plt.legend()
     plt.show
     '''
@@ -180,4 +191,4 @@ if __name__=='__main__':
     plt.plot(w, elf, label='RPA')
     plt.legend()
     plt.show()
-
+    '''
