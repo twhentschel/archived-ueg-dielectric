@@ -119,10 +119,8 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
 
     imagintargs = lambda p, y: imagintegrand(p, y, k, omega, kBT, mu, nu)
     
-    # Restricting max_step is important when nu becomes small (i.e. ~< 1e-5)
     imagODEsolve = solve_ivp(imagintargs, plim, y0, method='LSODA',
-                             rtol=tol, atol=tol,
-                             max_step=0.1)
+                             rtol=tol, atol=tol)
     
     return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
                    2 / np.pi / k**3 * imagODEsolve.y[0][-1])
