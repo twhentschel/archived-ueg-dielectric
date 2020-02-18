@@ -26,8 +26,23 @@ def realintegrand(p, y, k, omega, kBT, mu, nu, delta):
     
     Parameters:
     ___________
-    
-    
+    p: scalar
+        The integration variable, which is also the momemtum of the electronic
+        state.
+    y: function
+        Only necessary for the ODE code, has no meaning here.
+    k: scalar
+        The change of momentum for an incident photon with momentum k0 
+        scattering to a state with momentum k1: k = |k1-k0|, in a.u.
+    omega: scalar
+        The change of energy for an incident photon with energy w0 
+        scattering to a state with energy w1: w = w0-w1, in a.u.
+    kBT: scalar
+        Thermal energy (kb - Boltzmann's constant, T is temperature) in a.u.
+    mu: scalar
+        Chemical potential in a.u.    
+    nu: scalar
+        Collision frequency in a.u.         
     Returns:
     ________
     """
@@ -56,7 +71,23 @@ def imagintegrand(p, y, k, omega, kBT, mu, nu):
     
     Parameters:
     ___________
-    
+    p: scalar
+        The integration variable, which is also the momemtum of the electronic
+        state.
+    y: function
+        Only necessary for the ODE code, has no meaning here.
+    k: scalar
+        The change of momentum for an incident photon with momentum k0 
+        scattering to a state with momentum k1: k = |k1-k0|, in a.u.
+    omega: scalar
+        The change of energy for an incident photon with energy w0 
+        scattering to a state with energy w1: w = w0-w1, in a.u.
+    kBT: scalar
+        Thermal energy (kb - Boltzmann's constant, T is temperature) in a.u.
+    mu: scalar
+        Chemical potential in a.u.   
+    nu: scalar
+        Collision frequency in a.u. 
     
     Returns:
     ________
@@ -87,7 +118,19 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     
     Parameters:
     ___________
-    
+    k: scalar
+        The change of momentum for an incident photon with momentum k0 
+        scattering to a state with momentum k1: k = |k1-k0|, in a.u.
+    omega: scalar
+        The change of energy for an incident photon with energy w0 
+        scattering to a state with energy w1: w = w0-w1, in a.u.
+    kBT: scalar
+        Thermal energy (kb - Boltzmann's constant, T is temperature) in a.u.
+    mu: scalar
+        Chemical potential in a.u.
+    nu: scalar
+        Collision frequency in a.u. 
+        
     Returns:
     ________
     """
@@ -132,7 +175,19 @@ def MerminDielectric(k, omega, kBT, mu, nu):
     
     Parameters:
     ___________
-    
+    k: scalar
+        The change of momentum for an incident photon with momentum k0 
+        scattering to a state with momentum k1: k = |k1-k0|, in a.u.
+    omega: scalar
+        The change of energy for an incident photon with energy w0 
+        scattering to a state with energy w1: w = w0-w1, in a.u.
+    kBT: scalar
+        Thermal energy (kb - Boltzmann's constant, T is temperature) in a.u.
+    mu: scalar
+        Chemical potential in a.u.
+    nu: scalar
+        Collision frequency in a.u. 
+        
     Returns:
     ________
     """
@@ -162,9 +217,9 @@ def ELF(k, omega, kBT, mu, nu):
 if __name__=='__main__':
     import matplotlib.pyplot as plt    
 
-    k = 1
-    mu = 0.279
-    kbT = 1/27.2114
+    k = 0.246
+    mu = 0.126
+    kbT = 6/27.2114
     # Using nu = 0 does not work so well!
     nu = 0
     
@@ -193,13 +248,13 @@ if __name__=='__main__':
     plt.legend()
     plt.show
     '''
-    w = np.linspace(0, 4, 200)
+    w = np.linspace(0.50382, 0.50383, 200)
 
     import time
     start = time.time()
-    elf = np.asarray([ELF(k, x, kbT, mu, nu) for x in w])
+    eps = np.asarray([MerminDielectric(k, x, kbT, mu, nu) for x in w])
     print("time = {}".format(time.time()-start))
-    plt.plot(w, elf, label='RPA')
+    plt.plot(w, eps.real, label='RPA')
     plt.legend()
     plt.show()
 
