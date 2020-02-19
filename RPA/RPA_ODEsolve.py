@@ -59,15 +59,15 @@ def ELF(k, w, kbT, mu):
 def RPAeps(k, w, kbT, mu):
     return complex(re_RPAeps(k, w, kbT, mu), im_RPAeps(k, w, kbT, mu))
 
-
-w = np.linspace(0, 4, 200)
-import time
-start = time.time()
-reeps = np.asarray([re_RPAeps(k, x, kbT, mu) for x in w])
-print("time = {}".format(time.time()-start))
-imeps = im_RPAeps(k, w, kbT, mu)
-plt.plot(w, reeps, label='real')
-plt.plot(w, imeps, label='imaginary')
-#plt.plot(w, [ELF(k, x, kbT, mu) for x in w])
-#plt.legend()
-plt.show()
+if __name__=="__main__":
+    w = np.linspace(0, 4, 200)
+    import time
+    start = time.time()
+    reeps = np.asarray([re_RPAeps(k, x, kbT, mu) for x in w])
+    print("time = {}".format(time.time()-start))
+    imeps = im_RPAeps(k, w, kbT, mu)
+    plt.plot(w, reeps, label='real')
+    plt.plot(w, imeps, label='imaginary')
+    #plt.plot(w, [ELF(k, x, kbT, mu) for x in w])
+    #plt.legend()
+    plt.show()
