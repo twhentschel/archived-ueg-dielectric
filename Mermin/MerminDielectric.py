@@ -19,7 +19,7 @@ of Warm Dense Matter".
 import numpy as np
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
-def realintegrand(p, y, k, omega, kBT, mu, nu, delta):
+def realintegrand(p, y, k, omega, nu, kBT, mu, delta):
     """
     The integrand present in the formula for the real part of the general
     RPA dielectric function.
@@ -64,7 +64,7 @@ def realintegrand(p, y, k, omega, kBT, mu, nu, delta):
     
     return logpart * FD * p
 
-def imagintegrand(p, y, k, omega, kBT, mu, nu):
+def imagintegrand(p, y, k, omega, nu, kBT, mu):
     """
     The integrand present in the formula for the imaginary part of the general
     RPA dielectric function.
@@ -107,7 +107,7 @@ def imagintegrand(p, y, k, omega, kBT, mu, nu):
     return arctanpart * FD * p  
     #return  arctanpart
 
-def generalRPAdielectric(k, omega, kBT, mu, nu):
+def generalRPAdielectric(k, omega, nu, kBT, mu):
     """
     Numerically calculates the dielectric function  in Random Phase 
     Approximation (RPA), epsilon_{RPA}(k, omega + i*nu). This function is 
@@ -143,7 +143,7 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     tol = 1.49012e-8
     
     delta = 10**-7
-    realintargs = lambda p, y: realintegrand(p, y, k, omega, kBT, mu, nu, 
+    realintargs = lambda p, y: realintegrand(p, y, k, omega, nu, kBT, mu, 
                                              delta)
     realODEsolve = solve_ivp(realintargs, plim, y0, method='LSODA',
                              rtol=tol, atol=tol)
@@ -160,7 +160,7 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
             p2 = tmp
         plim = (p1, p2)
 
-    imagintargs = lambda p, y: imagintegrand(p, y, k, omega, kBT, mu, nu)
+    imagintargs = lambda p, y: imagintegrand(p, y, k, omega, nu, kBT, mu)
     
     imagODEsolve = solve_ivp(imagintargs, plim, y0, method='LSODA',
                              rtol=tol, atol=tol)
@@ -168,7 +168,45 @@ def generalRPAdielectric(k, omega, kBT, mu, nu):
     return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
                    2 / np.pi / k**3 * imagODEsolve.y[0][-1])
 
-def MerminDielectric(k, omega, kBT, mu, nu):
+def generalMermin(epsilon, k, omega, nu, *args):
+    """
+    Numerically calculates the Mermin dielectric function. This adds some ionic
+    structure to the dielectric function passed through epsilon. Typically this
+    will be the RPA dielectric function, but we also want to allow for a 
+    general dielectric functions.
+    
+    Parameters:
+    ___________
+    epsilon: function
+        dielectric function that we want to add ionic information to. The 
+        argument structure must be epsilon(k, omega, nu, args) and args must
+        be ordered properly.
+    k: scalar
+        The change of momentum for an incident photon with momentum k0 
+        scattering to a state with momentum k1: k = |k1-k0|, in a.u.
+    omega: scalar
+        The change of energy for an incident photon with energy w0 
+        scattering to a state with energy w1: w = w0-w1, in a.u.
+    nu: scalar
+        Collision frequency in a.u. 
+    args: tupple
+        Additional arguments (temperature, chemical potential, ...)
+    """
+    
+    epsnonzerofreq = epsilon(k, omega, nu, *args)
+    epszerofreq    = epsilon(k, 0, 0, *args)
+    
+    numerator   = (omega + 1j*nu)*(epsnonzerofreq - 1)
+    denominator = omega + 1j*nu * (epsnonzerofreq - 1)/(epszerofreq - 1)
+    
+    # if this case is not handled seperately, it can return a bad answer when
+    # omega == 0.
+    if abs(nu) == 0:
+        return epsnonzerofreq
+    
+    return 1 + numerator/denominator
+    
+def MerminDielectric(k, omega, nu, kBT, mu):
     """
     Numerically calculates the Mermin dielectric, which builds upon the RPA
     dielectric function by taking into account electron collisions with ions.
@@ -192,25 +230,15 @@ def MerminDielectric(k, omega, kBT, mu, nu):
     ________
     """
     
-    RPAcomplexfreq = generalRPAdielectric(k, omega, kBT, mu, nu)
-    RPAzerofreq    = generalRPAdielectric(k, 0., kBT, mu, 0.)
-    
-    numerator   = (omega + 1j*nu)*(RPAcomplexfreq - 1)
-    denominator = omega + 1j*nu * (RPAcomplexfreq - 1)/(RPAzerofreq - 1)
+    return generalMermin(generalRPAdielectric, k, omega, nu, kBT, mu)
 
-    # if this case is not handled seperately, it can return a bad answer when
-    # omega == 0.
-    if abs(nu) == 0:
-        return RPAcomplexfreq
-    return 1 + numerator/denominator
-
-def ELF(k, omega, kBT, mu, nu):
+def ELF(k, omega, nu, kBT, mu):
     """
     Electron Loss Function, related to the amount of energy dissapated in the 
     system.
     """
     
-    eps = MerminDielectric(k, omega, kBT, mu, nu)
+    eps = MerminDielectric(k, omega, nu, kBT, mu)
     return eps.imag/(eps.real**2 + eps.imag**2)
 
 # Tests
@@ -220,7 +248,7 @@ if __name__=='__main__':
     k = 0.246
     mu = 0.126
     kbT = 6/27.2114
-    # Using nu = 0 does not work so well!
+    
     nu = 0
     
     
@@ -248,11 +276,11 @@ if __name__=='__main__':
     plt.legend()
     plt.show
     '''
-    w = np.linspace(0.50382, 0.50383, 200)
+    w = np.linspace(0, 4, 200)
 
     import time
     start = time.time()
-    eps = np.asarray([MerminDielectric(k, x, kbT, mu, nu) for x in w])
+    eps = np.asarray([MerminDielectric(k, x, nu, kbT, mu) for x in w])
     print("time = {}".format(time.time()-start))
     plt.plot(w, eps.real, label='RPA')
     plt.legend()
