@@ -8,7 +8,7 @@ Created on Tue Feb 18 16:34:32 2020
 import numpy as np
 import matplotlib.pyplot as plt
 
-from LFC.LFCDielectric import LFCDielectric
+import LFC.LFCDielectric as lfc
 
 # for PIMC UEG data
 from keras import losses
@@ -56,7 +56,8 @@ model.add(Dense(W_LAYER, input_dim=3, activation=LR))
 REGULARIZATION_RATE = 0.0000006
 
 for i in range(N_LAYER-1):
-	model.add( Dense( W_LAYER, activation=LR, kernel_regularizer=regularizers.l2( REGULARIZATION_RATE ) ) )
+	model.add( Dense( W_LAYER, activation=LR, 
+                  kernel_regularizer=regularizers.l2( REGULARIZATION_RATE)))
 
 model.add(Dense(1, activation='linear'))
 
@@ -69,19 +70,29 @@ def GPIMC(q, ne, T):
     rs = (3/4/np.pi/ne)**(1/3)
     kF = (9.0*np.pi/4.0)**(1.0/3.0)/rs
     x = q/kF
-    result = model.predict( np.array( [[x,rs,theta]] ) )
+    result = model.predict( np.array( [[x,rs,T]] ) )
     return result[0][0]
 
+########################################################
+""" Obtain collision frequencies from data file """
+
+filename = "xMermin/tests/Al_6_eV_vw.txt"
+w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
+nu = 1j*ImnuB; nu += RenuB
+########################################################
 
 # Let's take a look
 k = 1
 theta = 24 # scattering angle
-w = np.linspace(0, 4*wpau)
+w = w[0:300]
 
-lfcepsreal = [LFCDielectric(k, x, T_au, muau, GPIMC(k, neau, T_au)).real 
+f = [lfc.generalLFC(k, x, y, T_au, muau, GPIMC(k, neau, T_au)).real 
+              for x, y in zip(w, nu)]
+lfcepsreal = [lfc.LFCdielectric(k, x, T_au, muau, GPIMC(k, neau, T_au)).real 
               for x in w]
-rpaepsreal = [LFCDielectric(k, x, T_au, muau, 0).real for x in w]
+rpaepsreal = [lfc.LFCdielectric(k, x, T_au, muau, 0).real for x in w]
 
+plt.plot(w, f)
 plt.plot(w, lfcepsreal)
 plt.plot(w, rpaepsreal)
 plt.show()
