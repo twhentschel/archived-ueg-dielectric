@@ -151,7 +151,7 @@ def generalRPAdielectric(k, omega, nu, kBT, mu):
     # a small nu causes some problems when integrating the imaginary part of
     # the dielectric. When nu is small, the integrand is like a modulated 
     # step function between p1 and p2.
-    if abs(nu.real) < 10**-5:
+    if abs(nu) < 10**-5:
         p1 = abs(k**2-2*omega)/(2*k)
         p2 = (k**2 + 2*omega)/(2*k)
         if p1 > p2:
@@ -164,7 +164,7 @@ def generalRPAdielectric(k, omega, nu, kBT, mu):
     
     imagODEsolve = solve_ivp(imagintargs, plim, y0, method='LSODA',
                              rtol=tol, atol=tol)
-    
+
     return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
                    2 / np.pi / k**3 * imagODEsolve.y[0][-1])
 
@@ -190,7 +190,8 @@ def generalMermin(epsilon, k, omega, nu, *args):
     nu: scalar
         Collision frequency in a.u. 
     args: tupple
-        Additional arguments (temperature, chemical potential, ...)
+        Additional arguments (temperature, chemical potential, ...). Must be 
+        same order as in the epsilon() function.
     """
     
     epsnonzerofreq = epsilon(k, omega, nu, *args)
@@ -245,16 +246,16 @@ def ELF(k, omega, nu, kBT, mu):
 if __name__=='__main__':
     import matplotlib.pyplot as plt    
 
-    k = 0.246
-    mu = 0.126
+    k = 0.01
+    mu = 0.305
     kbT = 6/27.2114
     
-    nu = 0
+    nu = 0.0624 + 1j*0.014109090909
     
     
     # Initial tests for imaginary part
     '''
-    w = 0
+    w = 0.5
     p = (0, 10)
     y0 = [0]
     delta = 10**-10
@@ -276,13 +277,13 @@ if __name__=='__main__':
     plt.legend()
     plt.show
     '''
-    w = np.linspace(0, 4, 200)
+    w = np.linspace(0, 1, 200)
 
     import time
     start = time.time()
     eps = np.asarray([MerminDielectric(k, x, nu, kbT, mu) for x in w])
     print("time = {}".format(time.time()-start))
-    plt.plot(w, eps.real, label='RPA')
+    plt.plot(w, eps.imag, label='RPA')
     plt.legend()
     plt.show()
-
+    
