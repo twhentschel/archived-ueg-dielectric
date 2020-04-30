@@ -12,10 +12,11 @@ Calculates the dielectric function with the help of a local field correction
 
 import Mermin.MerminDielectric as MD
 
-def LFCdielectric(k, omega, kBT, mu, nu, G):
+def generalLFC(k, omega, nu, kBT, mu, G):
     """
-    Numerically calculates the dielectric function with the LFC term (G) and 
-    with a complex frequency omega + i*nu if necessary.
+    Numerically calculates the dielectric function with the LFC term (G). 
+    This function is labelled general becuase the frequency argument is made 
+    complex as epsilon_{LFC}(k, omega+i*nu, ...).
     
     Parameters:
     ___________
@@ -37,8 +38,8 @@ def LFCdielectric(k, omega, kBT, mu, nu, G):
         only pass in values one at a time.
 
     """
-    RPAeps_val = MD.generalRPAdielectric(k, omega, kBT, mu, nu)
-    return 1 - (1 - RPAeps_val)/(1 + (1 - RPAeps_val)*G)
+    eps_val = MD.generalRPAdielectric(k, omega, nu, kBT, mu)
+    return 1 - (1 - eps_val)/(1 + (1 - eps_val)*G)
 
 def LFCdielectric(k, omega, kBT, mu, G):
     """
@@ -63,4 +64,13 @@ def LFCdielectric(k, omega, kBT, mu, G):
         only pass in values one at a time.
 
     """
-    return LFCdielectric(k, omega, kBT, mu, 0, G)
+    return generalLFC(k, omega, 0, kBT, mu, G)
+
+def ELF(k, omega, kBT, mu, G):
+    """
+    Electron Loss Function, related to the amount of energy dissapated in the 
+    system.
+    """
+    
+    eps = LFCdielectric(k, omega, kBT, mu, G)
+    return eps.imag/(eps.real**2 + eps.imag**2)
