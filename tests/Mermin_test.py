@@ -7,6 +7,7 @@ Created on Mon Dec  2 12:49:57 2019
 """
 
 from Mermin import MerminDielectric as MD
+from xMermin import xMermin as xM
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -29,23 +30,33 @@ muau = 0.305 # mu for aluminum, with ne_cgs=1.8*10**23, T=6ev, Z*=3; au
 
 #########################################
 
-#k = 0.5
+k = 0.1
 
 filename = "tests/Al_6_eV_vw.txt"
 w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
-nu = 1j*ImnuT; nu += RenuT
+nu = 1j*ImnuB; nu += RenuB
 
-count = 0
-for k in (1, 0.5, 0.3, 0.2):
-    ELFmermin = np.asarray([MD.ELF(k, x, T_au, muau, y) for x,y in zip(w,nu)])
-    ELFrpa = np.asarray([MD.ELF(k, x, T_au, muau, 0) for x in w])
+w = w
+# count = 0
+# for k in (1, 0.5, 0.3, 0.1):
+#     ELFmermin = np.asarray([MD.ELF(k, x, y, T_au, muau) for x,y in zip(w,nu)])
+#     ELFrpa = np.asarray([MD.ELF(k, x, 0, T_au, muau) for x in w])
     
-    plt.plot(w/wpau, ELFmermin, label = "k = {} au".format(k), c="C" + str(count))
-    plt.plot(w/wpau, ELFrpa, linestyle='-.', c="C" + str(count))
-    count = count + 1
+#     plt.plot(w/wpau, ELFmermin, label = "k = {} au".format(k), c="C" + str(count))
+#     plt.plot(w/wpau, ELFrpa, linestyle='-.', c="C" + str(count))
+#     count = count + 1
 
-plt.xlabel(r"$\omega/\omega_p$")
-plt.ylabel("ELF")
-plt.xlim(1, 3)
-plt.legend()
+# plt.xlabel(r"$\omega/\omega_p$")
+# plt.ylabel("ELF")
+# plt.xlim(0, 3)
+# plt.legend()
+# plt.show()
+
+eps = np.asarray([MD.MerminDielectric(k, x, y, T_au, muau) 
+                  for x,y in zip(w,nu)])
+
+#plt.plot(w, eps.real, label="real")
+#plt.plot(w, eps.imag, label="imag")
+#plt.legend()
+plt.plot(w, w*eps.imag/4/np.pi)
 plt.show()
