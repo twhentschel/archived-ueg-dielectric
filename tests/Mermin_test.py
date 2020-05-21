@@ -34,9 +34,8 @@ k = 0.1
 
 filename = "tests/Al_6_eV_vw.txt"
 w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
-nu = 1j*ImnuB; nu += RenuB
+nu = 1j*ImnuT; nu += RenuT
 
-w = w
 # count = 0
 # for k in (1, 0.5, 0.3, 0.1):
 #     ELFmermin = np.asarray([MD.ELF(k, x, y, T_au, muau) for x,y in zip(w,nu)])
@@ -51,12 +50,15 @@ w = w
 # plt.xlim(0, 3)
 # plt.legend()
 # plt.show()
+drudeeps = 1 - wpau**2 / (w**2 + 1j * w * nu)
+drudeELF = drudeeps.imag / (drudeeps.imag**2 + drudeeps.real**2)
 
-eps = np.asarray([MD.MerminDielectric(k, x, y, T_au, muau) 
-                  for x,y in zip(w,nu)])
+for k in [0.5, 0.3, 0.1, 5e-2]:
+    eps = np.asarray([MD.MerminDielectric(k, x, y, T_au, muau) 
+                      for x,y in zip(w,nu)])
+    plt.plot(w, w*eps.imag/(eps.real**2 + eps.imag**2), label='k = {}'.format(k))
+    
+plt.plot(w, w*drudeELF, label='Drude', color='black')
+plt.legend()
 
-#plt.plot(w, eps.real, label="real")
-#plt.plot(w, eps.imag, label="imag")
-#plt.legend()
-plt.plot(w, w*eps.imag/4/np.pi)
 plt.show()
