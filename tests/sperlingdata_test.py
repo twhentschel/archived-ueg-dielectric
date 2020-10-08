@@ -28,12 +28,13 @@ from keras.layers.advanced_activations import LeakyReLU
 ########################################################
 """ Obtain collision frequencies from data file """
 
-filename = "xMermin/tests/Al_6_eV_vw.txt"
+filename = "tests/Al_6_eV_vw.txt"
 w, RenuT, RenuB, ImnuT, ImnuB = np.loadtxt(filename, skiprows = 1, unpack=True)
+#w, RenuT, ImnuT = np.loadtxt(filename, unpack=True)
 # Scale the collision frequencies
-RenuB = RenuB * RenuT[0]/RenuB[0]
-ImnuB = ImnuB * RenuT[0]/RenuB[0]
-nu = 1j*ImnuB; nu += RenuB
+# RenuB = RenuB * RenuT[0]/RenuB[0]
+# ImnuB = ImnuB * RenuT[0]/RenuB[0]
+nu = 1j*ImnuT; nu += RenuT
 
 # plt.plot(w, RenuB, color="C0", label="Born (real)")
 # plt.plot(w, ImnuB, color="C0", linestyle="--", label="Born (imag.)")
@@ -97,7 +98,7 @@ def GPIMC(q, ne, T):
 a0 = 0.529*10**-8 # Bohr radius, cm
 
 TeV = 6 # Temperature, eV
-ne_cgs = 1.8*10**23 # electron density, cm^-3
+ne_cgs = 1.29*10**23 # electron density, cm^-3
 
 
 neau = ne_cgs * a0**3 # electron density, au
@@ -108,11 +109,11 @@ wpau = np.sqrt(4*np.pi*neau)
 
 # Needed to assume some mu. For this, we are assuming the material and then
 # using a spreadsheet that Stephanie prepared to get mu
-muau = 0.305 # mu for aluminum, with ne_cgs=1.8*10**23, T=6ev, Z*=3; au
+muau = 0.201#0.305 # mu for aluminum, with ne_cgs=1.8*10**23, T=6ev, Z*=3; au
 ########################################################
 
 # Experimental data plot
-plt.scatter(wexp, DSFexp, color='k', s=5, label='Sperling et al., 2015')
+plt.scatter(wexp, DSFexp, color='k', s=20, label='Sperling et al., 2015')
 
 w0 = 7980. # eV
 Ha = 27.2114 # Hartree
@@ -133,15 +134,15 @@ DSFXMD = []
 for x,y in zip(w, nu):
     DSFRPA.append(DSF(k, x, T_au, md.ELF(k, x, 0., T_au, muau), neau))
     DSFMD.append(DSF(k, x, T_au, md.ELF(k, x, y, T_au, muau), neau))
-    #DSFLFC.append(DSF(k, x, T_au, lfc.ELF(k, x, T_au, muau, G), neau))
-    #DSFXMD.append(DSF(k, x, T_au, xmd.ELF(k, x, y, T_au, muau, G), neau))
+    DSFLFC.append(DSF(k, x, T_au, lfc.ELF(k, x, T_au, muau, G), neau))
+    DSFXMD.append(DSF(k, x, T_au, xmd.ELF(k, x, y, T_au, muau, G), neau))
 
 # We can normalize the dielectric function
 
-plt.plot(w0 - w*Ha, DSFRPA/max(DSFRPA)*0.6, label="No interactions")
-plt.plot(w0 - w*Ha, DSFMD/max(DSFMD)*0.6, label="e-i collisions from AA")
-#plt.plot(w0 - w*Ha, DSFLFC/max(DSFLFC)*0.6, label="e-e correlations")
-#plt.plot(w0 - w*Ha, DSFXMD/max(DSFXMD)*0.6, label="e-i + e-e")
+plt.plot(w0 - w*Ha, DSFRPA, label="RPA")
+plt.plot(w0 - w*Ha, DSFMD, label="Mermin")
+plt.plot(w0 - w*Ha, DSFLFC, label="LFC")
+plt.plot(w0 - w*Ha, DSFXMD, label="Mermin + LFC")
 
 plt.xlabel("Scattered Photon Energy (eV)")
 plt.ylabel("Signal (arb. units)")
