@@ -19,6 +19,7 @@ of Warm Dense Matter".
 import numpy as np
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
+from scipy.integrate import simps
 
 def realintegrand(p, k, omega, nu, kBT, mu, delta):
     """
@@ -117,67 +118,100 @@ def generalRPAdielectric(k, omega, nu, kBT, mu):
     
     Parameters:
     ___________
-    k: scalar
+    k: scalar or array-like
         The change of momentum for an incident photon with momentum k0 
         scattering to a state with momentum k1: k = |k1-k0|, in a.u.
-    omega: scalar
+    omega: scalar or array-like
         The change of energy for an incident photon with energy w0 
         scattering to a state with energy w1: w = w0-w1, in a.u.
+    nu: scalar or array-like
+        Collision frequency in a.u. 
     kBT: scalar
         Thermal energy (kb - Boltzmann's constant, T is temperature) in a.u.
     mu: scalar
         Chemical potential in a.u.
-    nu: scalar
-        Collision frequency in a.u. 
         
     Returns:
     ________
     """
     
+    k = np.asarray(k)
+    omega = np.asarray(omega)
+    nu = np.asarray(nu)
+    scalar_input = False
+    if k.ndim == 0:
+        k = np.expand_dims(k, axis=0) # Makes k 1D
+        scalar_input = True
+    if omega.ndim == 0:
+        omega = np.expand_dims(omega, axis=0)
+        scalar_input = True
+    if nu.ndim == 0:
+        nu = np.expand_dims(nu, axis=0)
+        scalar_input = True
+
+        
+
     y0 = [0]
     # Limits of integration - 10 sufficiently acts like infinity in this 
     # problem.
-    plim = (0, 10)
+    # plim = (0, 10)
+    prange = np.linspace(0, 10, 51)
     # Change the tolerance - matches scipy.integrate.odeint
     tol = 1.49012e-8
     
     # Integral for real part of the dielectric function
     delta = 10**-7
-    realintargs = lambda p, y: realintegrand(p, k, omega, nu, kBT, mu, 
-                                             delta)
-    realODEsolve = solve_ivp(realintargs, plim, y0, method='LSODA',
-                             vectorized=True, rtol=tol, atol=tol)
+    realint = lambda p : realintegrand(p, k, omega, nu, kBT, mu, 
+                                       delta)
+    # realODEsolve = solve_ivp(realintargs, plim, y0, method='LSODA',
+    #                          vectorized=True, rtol=tol, atol=tol)
     
+    realsolve = simps(realint(prange), prange)
     # Integral for the imag part of the dielectric function
     
     # a small nu causes some problems when integrating the imaginary part of
     # the dielectric. When nu is small, the integrand is like a modulated 
     # step function between p1 and p2.
-    if abs(nu) < 10**-5:
-        p1 = abs(k**2-2*omega)/(2*k)
-        p2 = (k**2 + 2*omega)/(2*k)
-        if p1 > p2:
-            tmp = p1
-            p1 = p2
-            p2 = tmp
-        plim = (p1, p2)
-    
     p1 = abs(k**2-2*omega)/(2*k)
     p2 = (k**2 + 2*omega)/(2*k)
     
-    plims = np.sort([0, p1, p2, 10])
-    plims = plims[plims <= 10]
-    
-    imagintargs = lambda p, y: imagintegrand(p, k, omega, nu, kBT, mu)
-    
-    imagODEsolve = sum([solve_ivp(imagintargs, (plims[i-1], plims[i]), y0,
-                                  #method='LSODA', rtol=tol, atol=tol,
-                                  rtol=tol, atol=tol,
-                                  vectorized=True).y[0][-1] \
-                        for i in range(1, len(plims))])
+    # Trying to avoid 'if' statements
+    p1 = np.where(p1 < 10, p1, 10)
+    p2 = np.where(p2 < 10, p2, 10)
 
-    return complex(1 + 2 / np.pi / k**3 * realODEsolve.y[0][-1],
-                   2 / np.pi / k**3 * imagODEsolve)
+        
+    imagint = lambda p : imagintegrand(p, k, omega, nu, kBT, mu)
+    print(p1)
+    print(p2)
+    imagsolve = 0
+    reg1 = np.transpose(np.linspace(np.zeros(len(p1)), p1, 21))
+    # Check that 0 != p1, p1 != p2, or p2 != 10
+    if not np.all(reg1 == reg1[0]):
+        print("here 1")
+        imagsolve += simps(imagint(reg1), reg1) 
+    reg2 = np.transpose(np.linspace(p1, p2, 21))
+    if not np.all(reg2 == reg2[0]):
+        print("here 2")
+        imagsolve += simps(imagint(reg2), reg2) 
+    reg3 = np.transpose(np.linspace(p2, 10*np.ones(len(p2)), 21))
+    if not np.all(reg3 == reg3[0]):
+        print("here 3")
+        imagsolve += simps(imagint(reg3), reg3) 
+    print(reg1 == reg1[0])
+    print(reg1)
+    print(reg2)
+    print(reg3 == reg3[0])
+    print(reg3)
+    # imagsolve =   simps(imagint(reg1), reg1) \
+    #             + simps(imagint(reg2), reg2) \
+    #             + simps(imagint(reg3), reg3)
+
+    ret = 1j*2 / np.pi / k**3 * imagsolve
+    ret += 1 + 2 / np.pi / k**3 * realsolve
+
+    if scalar_input:
+        return np.squeeze(ret)
+    return ret
 
 def generalMermin(epsilon, k, omega, nu, *args):
     """
@@ -296,16 +330,20 @@ if __name__=='__main__':
     # plt.legend()
     # plt.show()
     # '''
-    k = 0.45
+    k = 20
     T = 6/27.2114
     mu = 0.305
-    w = np.linspace(0, 35/27.2114, 150)
-    eps = np.asarray([MerminDielectric(k, x, 0, T, mu) for x in w])
-    plt.plot(w*27.2114, eps.real, color='black')
-    plt.plot(w*27.2114, eps.imag, color='red', linestyle='--')
-    plt.plot(w*27.2114, eps.imag/(eps.real**2 + eps.imag**2),
-             color='royalblue', linestyle='-.')
-    plt.xlabel(r'$\omega = \omega_s - \omega_0$')
-    plt.xlim(0, 35)
-    plt.ylim(-0.72, 7)
-    plt.show()
+    w = 5
+    # w = np.linspace(0, 35/27.2114, 150)
+    nu = complex(1, 0.1)
+    eps = MerminDielectric(k, w, nu, T, mu)
+    print(eps)
+    # eps = np.asarray([MerminDielectric(k, x, 0, T, mu) for x in w])
+    # plt.plot(w*27.2114, eps.real, color='black')
+    # plt.plot(w*27.2114, eps.imag, color='red', linestyle='--')
+    # plt.plot(w*27.2114, eps.imag/(eps.real**2 + eps.imag**2),
+    #          color='royalblue', linestyle='-.')
+    # plt.xlabel(r'$\omega = \omega_s - \omega_0$')
+    # plt.xlim(0, 35)
+    # plt.ylim(-0.72, 7)
+    # plt.show()
