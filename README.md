@@ -1,3 +1,4 @@
+(out of date - see new repository: electron-dielectric for a recent version)
 # dielectric-function
 Methods to calculate a dielectric function for many-body systems, using different approximations and what not.
 
